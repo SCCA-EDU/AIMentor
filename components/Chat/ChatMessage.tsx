@@ -3,7 +3,7 @@ import {
   IconCopy,
   IconEdit,
   IconLoader,
-  IconMicrophone,
+  IconHeadphones,
   IconRobot,
   IconTrash,
   IconUser,
@@ -166,13 +166,60 @@ export const ChatMessage: FC<Props> = memo(({ message, messageIndex }) => {
       }`}
       style={{ overflowWrap: 'anywhere' }}
     >
-      <div className="relative m-auto flex p-4 text-base md:max-w-2xl md:gap-6 md:py-6 lg:max-w-2xl lg:px-0 xl:max-w-3xl">
-        <div className="min-w-[40px] text-right font-bold">
+      <div className="relative m-auto flex p-4 text-base md:max-w-2xl md:gap-4 md:py-6 lg:max-w-2xl lg:px-0 xl:max-w-3xl">
+        <div className="min-w-[40px] text-right font-bold flex md:gap-2">
           {message.role === 'assistant' ? (
             <IconRobot size={30} />
           ) : (
             <IconUser size={30} />
           )}
+
+          <div
+            className="pt-1"
+          >
+            {isLoadingSpeech ? (
+              <IconLoader
+                size={20}
+                className="text-green-500 dark:text-green-400"
+              />
+            ) : (
+              <button
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                onClick={() => {
+                  setIsLoadingSpeech(true);
+                  post('/api/speech', {
+                    body: {
+                      text: message.content,
+                    },
+                    rawResponse: true,
+                  })
+                    .then((response) => (response as Response).arrayBuffer())
+                    .then(
+                      (arrayBuffer): Promise<AudioBuffer> =>
+                        new Promise((resolve, reject) => {
+                          const audioContext = new window.AudioContext();
+                          audioContext.decodeAudioData(
+                            arrayBuffer,
+                            resolve,
+                            reject,
+                          );
+                        }),
+                    )
+                    .then((buffer) => {
+                      setAudioBuffer(buffer);
+                    })
+                    .catch((error) => {
+                      console.error('Error loading audio:', error);
+                    })
+                    .finally(() => {
+                      setIsLoadingSpeech(false);
+                    });
+                }}
+              >
+                <IconHeadphones size={20} />
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="prose mt-[-2px] w-full dark:prose-invert">
@@ -301,50 +348,6 @@ export const ChatMessage: FC<Props> = memo(({ message, messageIndex }) => {
                     onClick={copyOnClick}
                   >
                     <IconCopy size={20} />
-                  </button>
-                )}
-                {isLoadingSpeech ? (
-                  <IconLoader
-                    size={20}
-                    className="text-green-500 dark:text-green-400"
-                  />
-                ) : (
-                  <button
-                    className="invisible group-hover:visible focus:visible text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-                    onClick={() => {
-                      setIsLoadingSpeech(true);
-                      post('/api/speech', {
-                        body: {
-                          text: message.content,
-                        },
-                        rawResponse: true,
-                      })
-                        .then((response) =>
-                          (response as Response).arrayBuffer(),
-                        )
-                        .then(
-                          (arrayBuffer): Promise<AudioBuffer> =>
-                            new Promise((resolve, reject) => {
-                              const audioContext = new window.AudioContext();
-                              audioContext.decodeAudioData(
-                                arrayBuffer,
-                                resolve,
-                                reject,
-                              );
-                            }),
-                        )
-                        .then((buffer) => {
-                          setAudioBuffer(buffer);
-                        })
-                        .catch((error) => {
-                          console.error('Error loading audio:', error);
-                        })
-                        .finally(() => {
-                          setIsLoadingSpeech(false);
-                        });
-                    }}
-                  >
-                    <IconMicrophone size={20} />
                   </button>
                 )}
               </div>
