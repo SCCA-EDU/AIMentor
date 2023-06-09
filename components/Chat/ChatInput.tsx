@@ -131,6 +131,7 @@ export const ChatInput = ({ onSend, onRegenerate, textareaRef }: Props) => {
       prompts,
       stopConversationRef,
     },
+    dispatch: homeDispatch
   } = useContext(HomeContext);
 
   const {
@@ -330,7 +331,7 @@ export const ChatInput = ({ onSend, onRegenerate, textareaRef }: Props) => {
       // stop
       setIsAudioRecording(false);
       aiMediaRecorder.current?.stopRecord().then(async (res) => {
-        setIsTyping(true);
+        homeDispatch({ field: 'messageIsStreaming', value: true });
         const formData = new FormData();
         formData.append('file', new File([res], 'recorded_audio.webm'));
         const result: {
@@ -343,7 +344,7 @@ export const ChatInput = ({ onSend, onRegenerate, textareaRef }: Props) => {
           setContent(result.text);
         }
 
-        setIsTyping(false);
+        homeDispatch({ field: 'messageIsStreaming', value: false });
       });
     } else {
       // start
@@ -386,6 +387,8 @@ export const ChatInput = ({ onSend, onRegenerate, textareaRef }: Props) => {
 
     return () => {
       window.removeEventListener('click', handleOutsideClick);
+      homeDispatch({ field: 'messageIsStreaming', value: false });
+      aiMediaRecorder.current?.stopRecord();
     };
   }, []);
 

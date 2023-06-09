@@ -1,6 +1,7 @@
 export class AIMediaRecorder {
   private chunks: Blob[] = [];
   private mediaRecorder: MediaRecorder | undefined;
+  private mediaStream: MediaStream | undefined;
   constructor() {}
   public initMediaRecorder(): Promise<MediaRecorder> {
     return new Promise((resolve, reject) => {
@@ -10,6 +11,7 @@ export class AIMediaRecorder {
         .then((stream) => {
           // Create a new MediaRecorder instance
           this.mediaRecorder = new MediaRecorder(stream);
+          this.mediaStream = stream;
           resolve(this.mediaRecorder);
         })
         .catch(function (error) {
@@ -38,6 +40,11 @@ export class AIMediaRecorder {
         };
       }
       this.mediaRecorder?.stop();
+      setTimeout(() => {
+        if (this.mediaStream) {
+          this.mediaStream.getTracks().forEach((item) => item.stop());
+        }
+      }, 500);
     });
   }
 }
