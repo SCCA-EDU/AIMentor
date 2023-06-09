@@ -1,4 +1,10 @@
-import { IconPlayerStop, IconRepeat, IconSend } from '@tabler/icons-react';
+import {
+  IconMicrophone,
+  IconPlayerStop,
+  IconPlayerStopFilled,
+  IconRepeat,
+  IconSend,
+} from '@tabler/icons-react';
 import {
   KeyboardEvent,
   MutableRefObject,
@@ -10,6 +16,10 @@ import {
 } from 'react';
 
 import { useTranslation } from 'next-i18next';
+
+import { useFetch } from '@/hooks/useFetch';
+
+import { AIMediaRecorder } from '@/utils/app/recordAudio';
 
 import { Plugin } from '@/types/agent';
 import { Message } from '@/types/chat';
@@ -127,6 +137,7 @@ export const ChatInput = ({ onSend, onRegenerate, textareaRef }: Props) => {
     state: { selectedPlugins, chatMode },
     dispatch: chatDispatch,
   } = useContext(ChatContext);
+  const { post } = useFetch();
 
   const [content, setContent] = useState<string>();
   const [isTyping, setIsTyping] = useState<boolean>(false);
@@ -138,6 +149,8 @@ export const ChatInput = ({ onSend, onRegenerate, textareaRef }: Props) => {
   const [showPluginSelect, setShowPluginSelect] = useState(false);
   const [lastDownKey, setLastDownKey] = useState<string>('');
   const [endComposing, setEndComposing] = useState<boolean>(false);
+  const [isAudioRecording, setIsAudioRecording] = useState<boolean>(false);
+  const aiMediaRecorder = useRef<AIMediaRecorder | null>(null);
 
   const promptListRef = useRef<HTMLUListElement | null>(null);
 
@@ -309,6 +322,40 @@ export const ChatInput = ({ onSend, onRegenerate, textareaRef }: Props) => {
     }
   };
 
+  const handleRecordAudio = () => {
+    if (messageIsStreaming) {
+      return;
+    }
+    if (isAudioRecording) {
+      // stop
+      setIsAudioRecording(false);
+      aiMediaRecorder.current?.stopRecord().then(async (res) => {
+        setIsTyping(true);
+        const formData = new FormData();
+        formData.append('file', new File([res], 'recorded_audio.webm'));
+        const result: {
+          success: boolean;
+          text: string;
+        } = await post('/api/audio', {
+          body: formData,
+        });
+        if (result.success) {
+          setContent(result.text);
+        }
+
+        setIsTyping(false);
+      });
+    } else {
+      // start
+      const recorderInstance = new AIMediaRecorder();
+      recorderInstance.initMediaRecorder().then(() => {
+        setIsAudioRecording(true);
+        aiMediaRecorder.current = recorderInstance;
+        aiMediaRecorder.current.startRecord();
+      });
+    }
+  };
+
   useEffect(() => {
     if (promptListRef.current) {
       promptListRef.current.scrollTop = activePromptIndex * 30;
@@ -400,7 +447,7 @@ export const ChatInput = ({ onSend, onRegenerate, textareaRef }: Props) => {
         )}
         <textarea
           ref={textareaRef}
-          className="m-0 w-full resize-none border-0 bg-transparent p-0 py-2 pr-8 pl-10 text-black dark:bg-transparent dark:text-white md:py-3 md:pl-10"
+          className="m-0 w-full resize-none border-0 bg-transparent p-0 py-2 pr-14 pl-10 text-black dark:bg-transparent dark:text-white md:py-3 md:pl-10"
           style={{
             resize: 'none',
             bottom: `${textareaRef?.current?.scrollHeight}px`,
@@ -428,6 +475,18 @@ export const ChatInput = ({ onSend, onRegenerate, textareaRef }: Props) => {
           onChange={handleChange}
           onKeyDown={handleKeyDown}
         />
+        <button
+          className="absolute right-8 top-2 rounded-sm p-1 text-neutral-800 opacity-60 hover:bg-neutral-200 hover:text-neutral-900 dark:bg-opacity-50 dark:text-neutral-100 dark:hover:text-neutral-200"
+          onClick={handleRecordAudio}
+        >
+          {messageIsStreaming ? (
+            <div className="h-4 w-4 animate-spin rounded-full border-t-2 border-neutral-800 opacity-60 dark:border-neutral-100"></div>
+          ) : isAudioRecording ? (
+            <IconPlayerStopFilled size={18} />
+          ) : (
+            <IconMicrophone size={18} />
+          )}
+        </button>
         <button
           className="absolute right-2 top-2 rounded-sm p-1 text-neutral-800 opacity-60 hover:bg-neutral-200 hover:text-neutral-900 dark:bg-opacity-50 dark:text-neutral-100 dark:hover:text-neutral-200"
           onClick={handleSend}
