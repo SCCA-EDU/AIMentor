@@ -14,6 +14,7 @@ import {
   useState,
 } from 'react';
 
+import { defaultFolderId } from '@/hooks/useDefaultPrompts';
 import useFolders from '@/hooks/useFolders';
 
 import { FolderInterface } from '@/types/folder';
@@ -167,7 +168,7 @@ const Folder = ({
           </div>
         )}
 
-        {!isDeleting && !isRenaming && (
+        {!isDeleting && !isRenaming && currentFolder.id !== defaultFolderId && (
           <div className="absolute right-1 z-10 flex text-gray-300">
             <SidebarActionButton
               handleClick={(e) => {

@@ -16,6 +16,14 @@ type FoldersAction = {
   add: (name: string, type: FolderType) => Promise<FolderInterface[]>;
   remove: (folderId: string) => Promise<FolderInterface[]>;
   clear: () => Promise<FolderInterface[]>;
+  addDefaultFolder: (
+    name: string,
+    type: FolderType,
+    id?: string,
+  ) => Promise<FolderInterface[]>;
+  updateDefaultFolder: (
+    newState: FolderInterface,
+  ) => Promise<FolderInterface[]>;
 };
 
 export default function useFolders(): [FolderInterface[], FoldersAction] {
@@ -26,7 +34,7 @@ export default function useFolders(): [FolderInterface[], FoldersAction] {
   const folderRemove = trpc.folders.remove.useMutation();
   const folderRemoveAll = trpc.folders.removeAll.useMutation();
   const {
-    state: { folders, conversations, prompts },
+    state: { folders, conversations, prompts, defaultFolders },
     dispatch,
   } = useContext(HomeContext);
 
@@ -122,14 +130,47 @@ export default function useFolders(): [FolderInterface[], FoldersAction] {
     ],
   );
 
+  const addDefaultFolder = useCallback(
+    async (name: string, type: FolderType, id?: string) => {
+      const newFolder: FolderInterface = {
+        id: id || uuidv4(),
+        name,
+        type,
+      };
+      const newState = [newFolder, ...defaultFolders];
+      dispatch({ field: 'defaultFolders', value: newState });
+      return newState;
+    },
+    [dispatch, defaultFolders],
+  );
+
+  const updateDefaultFolder = useCallback(
+    async (folder: FolderInterface) => {
+      const newState = defaultFolders.map((f) => {
+        if (f.id === folder.id) {
+          return folder;
+        }
+        return f;
+      });
+      dispatch({ field: 'defaultFolders', value: newState });
+      return newState;
+    },
+    [dispatch, defaultFolders],
+  );
+
   return [
-    folders,
+    [
+      ...defaultFolders,
+      ...folders,
+    ],
     {
       add,
       update,
       updateAll,
       remove,
       clear,
+      addDefaultFolder,
+      updateDefaultFolder,
     },
   ];
 }

@@ -20,7 +20,7 @@ type PromptsAction = {
 export default function usePrompts(): [Prompt[], PromptsAction] {
   const { t: tErr } = useTranslation('error');
   const {
-    state: { defaultModelId, prompts },
+    state: { defaultModelId, prompts, defaultPrompts },
     dispatch,
   } = useContext(HomeContext);
   const promptsUpdateAll = trpc.prompts.updateAll.useMutation();
@@ -81,7 +81,10 @@ export default function usePrompts(): [Prompt[], PromptsAction] {
   );
 
   return [
-    prompts,
+    [
+      ...prompts,
+      ...defaultPrompts,
+    ],
     {
       add,
       update,

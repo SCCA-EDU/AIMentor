@@ -12,6 +12,8 @@ import {
   useState,
 } from 'react';
 
+import { defaultFolderId } from '@/hooks/useDefaultPrompts';
+
 import { Prompt } from '@/types/prompt';
 
 import SidebarActionButton from '@/components/Buttons/SidebarActionButton';
@@ -82,7 +84,9 @@ export const PromptComponent = ({ prompt }: Props) => {
         draggable="true"
         onClick={(e) => {
           e.stopPropagation();
-          setShowModal(true);
+          if (prompt.folderId !== defaultFolderId) {
+            setShowModal(true);
+          }
         }}
         onDragStart={(e) => handleDragStart(e, prompt)}
         onMouseLeave={() => {
@@ -110,7 +114,7 @@ export const PromptComponent = ({ prompt }: Props) => {
         </div>
       )}
 
-      {!isDeleting && !isRenaming && (
+      {!isDeleting && !isRenaming && prompt.folderId !== defaultFolderId && (
         <div className="absolute right-1 z-10 flex text-gray-300">
           <SidebarActionButton handleClick={handleOpenDeleteModal}>
             <IconTrash size={18} />

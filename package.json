@@ -61,6 +61,7 @@
     "@types/uuid": "^9.0.1",
     "@vitest/coverage-c8": "^0.30.1",
     "autoprefixer": "^10.4.14",
+    "csv-loader": "^3.0.5",
     "endent": "^2.1.0",
     "eslint": "8.40.0",
     "eslint-config-next": "13.3.1",
