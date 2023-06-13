@@ -2,6 +2,8 @@ import {
   IconCheck,
   IconCopy,
   IconEdit,
+  IconLoader,
+  IconHeadphones,
   IconRobot,
   IconTrash,
   IconUser,
@@ -11,12 +13,14 @@ import { FC, memo, useContext, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'next-i18next';
 
 import useConversations from '@/hooks/useConversations';
+import { useFetch } from '@/hooks/useFetch';
 import useMesseageSender from '@/hooks/useMessageSender';
 
 import { Message } from '@/types/chat';
 
 import HomeContext from '@/pages/api/home/home.context';
 
+import AudioPlayer from '../Audio/AudioPlayers';
 import { CodeBlock } from '../Markdown/CodeBlock';
 import { MemoizedReactMarkdown } from '../Markdown/MemoizedReactMarkdown';
 import ChatContext from './Chat.context';
@@ -45,6 +49,9 @@ export const ChatMessage: FC<Props> = memo(({ message, messageIndex }) => {
 
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [isTyping, setIsTyping] = useState<boolean>(false);
+  const [isLoadingSpeech, setIsLoadingSpeech] = useState<boolean>(false);
+  const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | undefined>();
+  const { post } = useFetch();
   const [messageContent, setMessageContent] = useState(message.content);
   const [messagedCopied, setMessageCopied] = useState(false);
 
@@ -159,13 +166,60 @@ export const ChatMessage: FC<Props> = memo(({ message, messageIndex }) => {
       }`}
       style={{ overflowWrap: 'anywhere' }}
     >
-      <div className="relative m-auto flex p-4 text-base md:max-w-2xl md:gap-6 md:py-6 lg:max-w-2xl lg:px-0 xl:max-w-3xl">
-        <div className="min-w-[40px] text-right font-bold">
+      <div className="relative m-auto flex p-4 text-base md:max-w-2xl md:gap-4 md:py-6 lg:max-w-2xl lg:px-0 xl:max-w-3xl">
+        <div className="min-w-[40px] text-right font-bold flex md:gap-2">
           {message.role === 'assistant' ? (
             <IconRobot size={30} />
           ) : (
             <IconUser size={30} />
           )}
+
+          <div
+            className="pt-1"
+          >
+            {isLoadingSpeech ? (
+              <IconLoader
+                size={20}
+                className="text-green-500 dark:text-green-400"
+              />
+            ) : (
+              <button
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                onClick={() => {
+                  setIsLoadingSpeech(true);
+                  post('/api/speech', {
+                    body: {
+                      text: message.content,
+                    },
+                    rawResponse: true,
+                  })
+                    .then((response) => (response as Response).arrayBuffer())
+                    .then(
+                      (arrayBuffer): Promise<AudioBuffer> =>
+                        new Promise((resolve, reject) => {
+                          const audioContext = new window.AudioContext();
+                          audioContext.decodeAudioData(
+                            arrayBuffer,
+                            resolve,
+                            reject,
+                          );
+                        }),
+                    )
+                    .then((buffer) => {
+                      setAudioBuffer(buffer);
+                    })
+                    .catch((error) => {
+                      console.error('Error loading audio:', error);
+                    })
+                    .finally(() => {
+                      setIsLoadingSpeech(false);
+                    });
+                }}
+              >
+                <IconHeadphones size={20} />
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="prose mt-[-2px] w-full dark:prose-invert">
@@ -297,6 +351,7 @@ export const ChatMessage: FC<Props> = memo(({ message, messageIndex }) => {
                   </button>
                 )}
               </div>
+              <AudioPlayer audioBuffer={audioBuffer} />
             </div>
           )}
         </div>
