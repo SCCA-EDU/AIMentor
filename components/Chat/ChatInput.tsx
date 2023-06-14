@@ -38,6 +38,7 @@ import { PromptList } from './PromptList';
 import { VariableModal } from './VariableModal';
 
 import classNames from 'classnames';
+import usePrompts from '@/hooks/usePrompts';
 
 interface Props {
   onSend: (
@@ -128,11 +129,12 @@ export const ChatInput = ({ onSend, onRegenerate, textareaRef }: Props) => {
     state: {
       selectedConversation,
       messageIsStreaming,
-      prompts,
       stopConversationRef,
     },
     dispatch: homeDispatch
   } = useContext(HomeContext);
+
+  const [prompts] = usePrompts();
 
   const {
     state: { selectedPlugins, chatMode },

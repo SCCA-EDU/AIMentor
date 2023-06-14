@@ -17,10 +17,12 @@ export interface HomeInitialState {
   modelError: Error | null;
   models: OpenAIModel[];
   folders: FolderInterface[];
+  defaultFolders: FolderInterface[];
   conversations: Conversation[];
   selectedConversation: Conversation | undefined;
   currentMessage: Message | undefined;
   prompts: Prompt[];
+  defaultPrompts: Prompt[];
   showChatbar: boolean;
   showPromptbar: boolean;
   currentFolder: FolderInterface | undefined;
@@ -46,10 +48,12 @@ export const initialState: Partial<HomeInitialState> = {
   modelError: null,
   models: [],
   folders: [],
+  defaultFolders: [],
   conversations: [],
   selectedConversation: undefined,
   currentMessage: undefined,
   prompts: [],
+  defaultPrompts: [],
   showPromptbar: true,
   showChatbar: true,
   currentFolder: undefined,

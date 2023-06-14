@@ -15,6 +15,7 @@ import { Prompts } from './components/Prompts';
 import Sidebar from '../Sidebar';
 import PromptbarContext from './PromptBar.context';
 import { PromptbarInitialState, initialState } from './Promptbar.state';
+import { useDefaultPrompts } from '@/hooks/useDefaultPrompts';
 
 const Promptbar = () => {
   const { t } = useTranslation('promptbar');
@@ -85,6 +86,8 @@ const Promptbar = () => {
       promptDispatch({ field: 'filteredPrompts', value: prompts });
     }
   }, [searchTerm, prompts]);
+
+  useDefaultPrompts();
 
   return (
     <PromptbarContext.Provider
